@@ -30,9 +30,6 @@ find_package(OpenCV REQUIRED)
 include_directories(src)
 set(
         image_warrior_sources
-        src/image_processor.cpp
-        src/file_utils.cpp
-        src/eta_estimator.cpp
 )
 
 #################################################
