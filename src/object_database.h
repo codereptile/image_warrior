@@ -39,6 +39,8 @@ public:
     std::vector<float> features;
 };
 
+float Similarity(const Object& a, const Object& b);
+
 class ObjectDatabase {
 public:
     ObjectDatabase(Context &ctx, boost::filesystem::path dir);
@@ -51,7 +53,7 @@ public:
 
     [[nodiscard]] size_t Size() const;
 
-    [[nodiscard]] const std::vector<std::shared_ptr<Object>> &Objects() const;
+    [[nodiscard]] const std::vector<std::shared_ptr<Object>> &GetObjects() const;
 
 private:
     Context &ctx_;

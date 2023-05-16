@@ -1,5 +1,5 @@
 {
-  "input_dir": "/mnt/stash/stash/ALL_PHOTOS/100CANON",
+  "input_dir": "./input",
   "output_dir": "./output",
   "log_pattern": "[%^%l%$] %v",
   "log_level": "debug",

@@ -20,7 +20,7 @@ ImageProcessor::ImageProcessor(Context &ctx)
 void ImageProcessor::Process(const ObjectDatabase &db) {
     StderrSuppressor stderr_suppressor;
 
-    for (const auto &object: db.Objects()) {
+    for (const auto &object: db.GetObjects()) {
         if (object->type_ == Object::Type::IMAGE) {
             paths_to_process_.push_back(object->path_);
         }
