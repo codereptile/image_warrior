@@ -17,7 +17,6 @@ public:
 
     Type type_;
     boost::filesystem::path path_;
-    uint64_t hash_;
 
     Object(Type type, boost::filesystem::path path);
 
@@ -39,7 +38,7 @@ public:
     std::vector<float> features;
 };
 
-float Similarity(const Object& a, const Object& b);
+float similarity(const Object &a, const Object &b);
 
 class ObjectDatabase {
 public:
@@ -47,17 +46,30 @@ public:
 
     void Update();
 
-    [[nodiscard]] const std::shared_ptr<Object> &Find(const boost::filesystem::path &path) const;
+    [[nodiscard]] const std::shared_ptr<Object> &find_by_path(const boost::filesystem::path &path) const;
 
-    [[nodiscard]] bool Contains(const boost::filesystem::path &path) const;
+    [[nodiscard]] bool contains(const boost::filesystem::path &path) const;
 
-    [[nodiscard]] size_t Size() const;
+    [[nodiscard]] size_t size() const;
 
-    [[nodiscard]] const std::vector<std::shared_ptr<Object>> &GetObjects() const;
+    [[nodiscard]] const std::vector<std::shared_ptr<Object>> &get_objects() const;
+
+    [[nodiscard]] std::vector<std::shared_ptr<Object>>
+    find_similar(const std::shared_ptr<Object> &object, float threshold) const;
+
+    void add_object(const std::shared_ptr<Object> &object);
+
+    void remove_object(const std::shared_ptr<Object> &object);
+
+    friend void copy_object(ObjectDatabase &from, ObjectDatabase &to, const std::shared_ptr<Object> &object);
 
 private:
+
+    void sort_objects();
+
     Context &ctx_;
     boost::filesystem::path dir_;
 
     std::vector<std::shared_ptr<Object>> objects_;
 };
+

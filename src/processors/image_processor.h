@@ -17,6 +17,8 @@ public:
     void Process(const ObjectDatabase &db) override;
 
 private:
+    void reset();
+
     static cv::Mat LoadImage(const boost::filesystem::path &file_path);
 
     void ImageProcessingThread(const ObjectDatabase &db);

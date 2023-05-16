@@ -14,19 +14,19 @@ Context::Context(const std::string &config_path) {
     spdlog::set_level(spdlog::level::from_str(config_tree_.get<std::string>("log_level")));
 }
 
-ObjectDatabase &Context::GetInputDatabase() {
+ObjectDatabase &Context::get_input_database() {
     return *input_db_;
 }
 
-ObjectDatabase &Context::GetOutputDatabase() {
+ObjectDatabase &Context::get_output_database() {
     return *output_db_;
 }
 
-const boost::property_tree::ptree &Context::GetConfigTree() const {
+const boost::property_tree::ptree &Context::get_config_tree() const {
     return config_tree_;
 }
 
-void Context::LoadDatabases() {
+void Context::load_databases() {
     spdlog::info("Loading input database...");
     try {
         input_db_ = std::make_shared<ObjectDatabase>(*this, config_tree_.get<std::string>("input_dir"));
@@ -34,7 +34,7 @@ void Context::LoadDatabases() {
         std::cout << std::endl << "Failed to load input database: " << e.what() << std::endl;
         exit(1);
     }
-    spdlog::info("Input database loaded, size: {}", input_db_->Size());
+    spdlog::info("Input database loaded, size: {}", input_db_->size());
 
     spdlog::info("Loading output database...");
     if (!boost::filesystem::exists(config_tree_.get<std::string>("output_dir"))) {
@@ -46,20 +46,20 @@ void Context::LoadDatabases() {
         std::cout << std::endl << "Failed to load output database: " << e.what() << std::endl;
         exit(1);
     }
-    spdlog::info("Output database loaded, size: {}", output_db_->Size());
+    spdlog::info("Output database loaded, size: {}", output_db_->size());
 }
 
-void Context::UpdateDatabases() {
+void Context::update_databases() {
     spdlog::info("Updating input database...");
     input_db_->Update();
-    spdlog::info("Input database updated, size: {}", input_db_->Size());
+    spdlog::info("Input database updated, size: {}", input_db_->size());
 
     spdlog::info("Updating output database...");
     output_db_->Update();
-    spdlog::info("Output database updated, size: {}", output_db_->Size());
+    spdlog::info("Output database updated, size: {}", output_db_->size());
 }
 
-void Context::InitializeProcessors() {
+void Context::initialize_processors() {
     spdlog::info("Initializing processors...");
 
     if (config_tree_.get<bool>("image_processor.enabled")) {
@@ -73,12 +73,12 @@ void Context::InitializeProcessors() {
     spdlog::info("Processors initialized");
 }
 
-void Context::ProcessDatabases() {
+void Context::process_databases() {
     spdlog::info("Processing input database...");
 
     for (const auto &processor: processors_) {
         spdlog::info("Processing input database with processor: {}", processor->GetName());
-        processor->Process(*input_db_);
+        processor->Process(get_input_database());
     }
 
     spdlog::info("Input database processed");
@@ -86,7 +86,7 @@ void Context::ProcessDatabases() {
     spdlog::info("Processing output database...");
     for (const auto &processor: processors_) {
         spdlog::info("Processing output database with processor: {}", processor->GetName());
-        processor->Process(*output_db_);
+        processor->Process(get_output_database());
     }
 
     spdlog::info("Output database processed");

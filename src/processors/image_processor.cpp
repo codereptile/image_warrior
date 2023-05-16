@@ -8,9 +8,9 @@ ImageProcessor::ImageProcessor(Context &ctx)
           ctx_(ctx),
           device_(torch::cuda::is_available() ? torch::kCUDA : torch::kCPU),
           model_(std::make_shared<torch::jit::script::Module>(
-                  torch::jit::load(ctx_.GetConfigTree().get<std::string>("image_processor.model_path"), device_))),
-          threads_(ctx_.GetConfigTree().get<size_t>("image_processor.threads")),
-          batch_size_limit_(ctx_.GetConfigTree().get<size_t>("image_processor.batch_size_limit")),
+                  torch::jit::load(ctx_.get_config_tree().get<std::string>("image_processor.model_path"), device_))),
+          threads_(ctx_.get_config_tree().get<size_t>("image_processor.threads")),
+          batch_size_limit_(ctx_.get_config_tree().get<size_t>("image_processor.batch_size_limit")),
           continue_processing_(true),
           processed_images_count_(0),
           paths_to_process_index_(0) {
@@ -18,9 +18,10 @@ ImageProcessor::ImageProcessor(Context &ctx)
 }
 
 void ImageProcessor::Process(const ObjectDatabase &db) {
+    reset();
     StderrSuppressor stderr_suppressor;
 
-    for (const auto &object: db.GetObjects()) {
+    for (const auto &object: db.get_objects()) {
         if (object->type_ == Object::Type::IMAGE) {
             paths_to_process_.push_back(object->path_);
         }
@@ -42,6 +43,17 @@ void ImageProcessor::Process(const ObjectDatabase &db) {
     processing_thread.join();
 }
 
+void ImageProcessor::reset() {
+    continue_processing_ = true;
+    processed_images_count_ = 0;
+
+    paths_to_process_.clear();
+    paths_to_process_index_ = 0;
+
+    batch_paths_.clear();
+    batch_tensors_.clear();
+}
+
 cv::Mat ImageProcessor::LoadImage(const boost::filesystem::path &file_path) {
     auto image = cv::imread(file_path.string());
     if (image.empty()) {
@@ -51,6 +63,8 @@ cv::Mat ImageProcessor::LoadImage(const boost::filesystem::path &file_path) {
 }
 
 void ImageProcessor::ImageProcessingThread(const ObjectDatabase &db) {
+    // Print progress bar right away:
+    spdlog::info("Processed {}/{} images\033[A", processed_images_count_, paths_to_process_.size());
     processed_images_count_ = 0;
     while (true) {
         std::vector<torch::Tensor> tensors;
@@ -85,7 +99,7 @@ void ImageProcessor::ImageProcessingThread(const ObjectDatabase &db) {
         for (int i = 0; i < output.size(0); i++) {
             torch::Tensor single_output = output[i];
 
-            auto image_object = std::dynamic_pointer_cast<ImageObject>(db.Find(paths[i]));
+            auto image_object = std::dynamic_pointer_cast<ImageObject>(db.find_by_path(paths[i]));
             if (!image_object) {
                 throw std::runtime_error("Failed to find image object: " + paths[i].string());
             }
@@ -96,10 +110,10 @@ void ImageProcessor::ImageProcessingThread(const ObjectDatabase &db) {
 
         processed_images_count_ += paths.size();
 
-        spdlog::info("Processed {} images\033[A", processed_images_count_);
+        spdlog::info("Processed {}/{} images\033[A", processed_images_count_, paths_to_process_.size());
     }
 
-    spdlog::info("Processed {} images", processed_images_count_);
+    spdlog::info("Processed {}/{} images", processed_images_count_, paths_to_process_.size());
 }
 
 void ImageProcessor::ImageLoaderThread() {
@@ -123,7 +137,7 @@ void ImageProcessor::ImageLoaderThread() {
         } catch (const std::exception &e) {
             spdlog::warn("Failed to load image {}: {}", image_path.string(), e.what());
             // Update the progress bar, so it's always visible:
-            spdlog::info("Processed {} images\033[A", processed_images_count_);
+            spdlog::info("Processed {}/{} images\033[A", processed_images_count_, paths_to_process_.size());
             continue;
         }
 

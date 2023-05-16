@@ -19,7 +19,7 @@ find_package(Boost REQUIRED COMPONENTS filesystem program_options)
 set(Torch_DIR "/usr/local/libtorch/share/cmake/Torch")
 set(CAFFE2_USE_CUDNN 1)
 
-# Find required packages
+# find_by_path required packages
 find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED)
 

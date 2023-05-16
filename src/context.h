@@ -19,19 +19,19 @@ class Context {
 public:
     explicit Context(const std::string &config_path);
 
-    ObjectDatabase &GetInputDatabase();
+    ObjectDatabase &get_input_database();
 
-    ObjectDatabase &GetOutputDatabase();
+    ObjectDatabase &get_output_database();
 
-    [[nodiscard]] const boost::property_tree::ptree &GetConfigTree() const;
+    [[nodiscard]] const boost::property_tree::ptree &get_config_tree() const;
 
-    void LoadDatabases();
+    void load_databases();
 
-    void UpdateDatabases();
+    void update_databases();
 
-    void InitializeProcessors();
+    void initialize_processors();
 
-    void ProcessDatabases();
+    void process_databases();
 
 private:
     boost::property_tree::ptree config_tree_;

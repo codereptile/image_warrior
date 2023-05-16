@@ -2,11 +2,11 @@
 
 #include <context.h>
 #include <numeric>
+#include <filesystem>
 
 Object::Object(Object::Type type, boost::filesystem::path path)
         : type_(type),
-          path_(std::move(path)),
-          hash_(0) {
+          path_(std::move(path)) {
 
 }
 
@@ -38,7 +38,7 @@ ImageObject::ImageObject(boost::filesystem::path path)
 
 }
 
-float Similarity(const Object &a, const Object &b) {
+float similarity(const Object &a, const Object &b) {
     if (a.type_ != b.type_) {
         return 0.0f;
     } else {
@@ -82,7 +82,7 @@ ObjectDatabase::ObjectDatabase(Context &ctx, boost::filesystem::path dir)
 void ObjectDatabase::Update() {
     for (const auto &entry: boost::filesystem::recursive_directory_iterator(dir_)) {
         if (boost::filesystem::is_regular_file(entry)) {
-            if (!Contains(entry.path())) {
+            if (!contains(entry.path())) {
                 if (auto object = Object::Create(entry.path())) {
                     objects_.push_back(std::move(object));
                 } else {
@@ -91,9 +91,10 @@ void ObjectDatabase::Update() {
             }
         }
     }
+    sort_objects();
 }
 
-const std::shared_ptr<Object> &ObjectDatabase::Find(const boost::filesystem::path &path) const {
+const std::shared_ptr<Object> &ObjectDatabase::find_by_path(const boost::filesystem::path &path) const {
     for (const auto &object: objects_) {
         if (object->path_ == path) {
             return object;
@@ -102,17 +103,56 @@ const std::shared_ptr<Object> &ObjectDatabase::Find(const boost::filesystem::pat
     throw std::runtime_error("Object not found: " + path.generic_string());
 }
 
-bool ObjectDatabase::Contains(const boost::filesystem::path &path) const {
+bool ObjectDatabase::contains(const boost::filesystem::path &path) const {
     return std::ranges::any_of(objects_, [&path](const auto &object) {
         return object->path_ == path;
     });
 }
 
-size_t ObjectDatabase::Size() const {
+size_t ObjectDatabase::size() const {
     return objects_.size();
 }
 
-const std::vector<std::shared_ptr<Object>> &ObjectDatabase::GetObjects() const {
+const std::vector<std::shared_ptr<Object>> &ObjectDatabase::get_objects() const {
     return objects_;
 }
 
+std::vector<std::shared_ptr<Object>> ObjectDatabase::find_similar(
+        const std::shared_ptr<Object> &object,
+        float threshold) const {
+    std::vector<std::shared_ptr<Object>> similar_objects;
+    for (const auto &other_object: objects_) {
+        if (object != other_object) {
+            float similarity_value = similarity(*object, *other_object);
+            if (similarity_value >= threshold) {
+                similar_objects.push_back(other_object);
+            }
+        }
+    }
+    return similar_objects;
+}
+
+void ObjectDatabase::add_object(const std::shared_ptr<Object> &object) {
+    objects_.push_back(object);
+    sort_objects();
+}
+
+void ObjectDatabase::sort_objects() {
+    std::sort(objects_.begin(), objects_.end(), [](const auto &a, const auto &b) {
+        return a->path_.generic_string() < b->path_.generic_string();
+    });
+}
+
+void ObjectDatabase::remove_object(const std::shared_ptr<Object> &object) {
+    objects_.erase(std::remove(objects_.begin(), objects_.end(), object), objects_.end());
+}
+
+void copy_object(ObjectDatabase &from, ObjectDatabase &to, const std::shared_ptr<Object> &object) {
+    if (from.contains(object->path_)) {
+        to.add_object(object);
+        from.remove_object(object);
+        std::filesystem::copy(object->path_.generic_string(), to.dir_.generic_string(), std::filesystem::copy_options::overwrite_existing);
+    } else {
+        throw std::runtime_error("Object not found in database: " + object->path_.generic_string());
+    }
+}
