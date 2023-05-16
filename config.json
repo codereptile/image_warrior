@@ -1,0 +1,12 @@
+{
+  "input_dir": "/mnt/stash/stash/ALL_PHOTOS/100CANON",
+  "output_dir": "./output",
+  "log_pattern": "[%^%l%$] %v",
+  "log_level": "debug",
+  "image_processor": {
+    "enabled": true,
+    "model_path": "models/resnet152_traced.pt",
+    "threads": 20,
+    "batch_size_limit": 300
+  }
+}

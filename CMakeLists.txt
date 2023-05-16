@@ -30,6 +30,11 @@ find_package(OpenCV REQUIRED)
 include_directories(src)
 set(
         image_warrior_sources
+        src/object_database.cpp
+        src/context.cpp
+        src/utils.cpp
+        src/processors/processor.cpp
+        src/processors/image_processor.cpp
 )
 
 #################################################
