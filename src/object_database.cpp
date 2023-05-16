@@ -144,6 +144,7 @@ void ObjectDatabase::sort_objects() {
 }
 
 void ObjectDatabase::remove_object(const std::shared_ptr<Object> &object) {
+    boost::filesystem::remove(object->path_);
     objects_.erase(std::remove(objects_.begin(), objects_.end(), object), objects_.end());
 }
 
@@ -151,7 +152,39 @@ void copy_object(ObjectDatabase &from, ObjectDatabase &to, const std::shared_ptr
     if (from.contains(object->path_)) {
         to.add_object(object);
         from.remove_object(object);
-        std::filesystem::copy(object->path_.generic_string(), to.dir_.generic_string(), std::filesystem::copy_options::overwrite_existing);
+        auto new_path = to.dir_ / object->path_.filename();
+        if (boost::filesystem::exists(new_path)) {
+            spdlog::warn("File already exists: {}", new_path.generic_string());
+            size_t i = 1;
+            do {
+                new_path = to.dir_ / (object->path_.stem().generic_string() + " (" + std::to_string(i) + ")" +
+                                      object->path_.extension().generic_string());
+                i++;
+            } while (boost::filesystem::exists(new_path));
+        }
+        std::filesystem::copy(object->path_.generic_string(), new_path.generic_string());
+    } else {
+        throw std::runtime_error("Object not found in database: " + object->path_.generic_string());
+    }
+}
+
+void move_object(ObjectDatabase &from, ObjectDatabase &to, const std::shared_ptr<Object> &object) {
+    if (from.contains(object->path_)) {
+        auto new_path = to.dir_ / object->path_.filename();
+        if (boost::filesystem::exists(new_path)) {
+            spdlog::warn("File already exists: {}", new_path.generic_string());
+            size_t i = 1;
+            do {
+                new_path = to.dir_ / (object->path_.stem().generic_string() + " (" + std::to_string(i) + ")" +
+                                      object->path_.extension().generic_string());
+                i++;
+            } while (boost::filesystem::exists(new_path));
+        }
+        std::filesystem::rename(object->path_.generic_string(), new_path.generic_string());
+        from.remove_object(object);
+
+        object->path_ = new_path;
+        to.add_object(object);
     } else {
         throw std::runtime_error("Object not found in database: " + object->path_.generic_string());
     }

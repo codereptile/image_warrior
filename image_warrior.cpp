@@ -3,6 +3,7 @@
 
 #include <context.h>
 #include <object_database.h>
+#include <filesystem>
 
 std::string text_temperature(const std::string &input, float value) {
     if (value > 1) {
@@ -77,6 +78,10 @@ std::string center(const std::string &input, int block_size) {
 }
 
 int main() {
+     std::filesystem::copy("input_backup", "input", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+//     return 0;
+    // TODO: remove
+
     auto start_time = std::chrono::high_resolution_clock::now();
     Context context("config.json");
     context.load_databases();
@@ -94,9 +99,11 @@ int main() {
     for (size_t i = 0; i < objects.size(); ++i) {
         const auto &similar_objects = context.get_output_database().find_similar(objects[i], 0.999);
         if (similar_objects.empty()) {
-            copy_object(context.get_input_database(), context.get_output_database(), objects[i]);
-            ++copy_count;
             spdlog::debug("Copying {}", objects[i]->path_.generic_string());
+            move_object(context.get_input_database(), context.get_output_database(), objects[i]);
+            ++copy_count;
+        } else {
+            context.get_input_database().remove_object(objects[i]);
         }
         spdlog::info("Processed {}/{} objects\033[A", i + 1, objects.size());
     }
@@ -130,4 +137,6 @@ int main() {
 //        }
 //        std::cout << "\n";
 //    }
+
+    return 0;
 }

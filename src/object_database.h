@@ -63,6 +63,8 @@ public:
 
     friend void copy_object(ObjectDatabase &from, ObjectDatabase &to, const std::shared_ptr<Object> &object);
 
+    friend void move_object(ObjectDatabase &from, ObjectDatabase &to, const std::shared_ptr<Object> &object);
+
 private:
 
     void sort_objects();

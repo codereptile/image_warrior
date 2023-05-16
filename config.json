@@ -1,8 +1,8 @@
 {
-  "input_dir": "./input",
-  "output_dir": "./output",
+  "input_dir": "/home/codereptile/ALL_PHOTOS",
+  "output_dir": "/home/codereptile/MEDIA/PHOTOS",
   "log_pattern": "[%^%l%$] %v",
-  "log_level": "debug",
+  "log_level": "info",
   "image_processor": {
     "enabled": true,
     "model_path": "models/resnet152_traced.pt",
